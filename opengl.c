@@ -1,0 +1,407 @@
+﻿#include <windows.h>
+#include <glew.h>
+#include <main.h>
+#include <stdio.h>
+#include <math.h>
+#include <intrin.h>
+
+char *VERTsource;
+char *FRAGsource;
+char *VERTsourceFont;
+char *FRAGsourceFont;
+char *fontImage;
+char *epicTexture;
+char *epicTexture2;
+char *slope;
+char *spikes;
+
+char *words[]  = {"air","rgb","water","mirror","animation","purple","multicolor","white",
+	"redlight","greenlight","bluelight","whitelight","bounce","mirror","spikes","normal",
+	"donut","shape1","greekpillar",
+	
+	};
+char *words2[] = {"normal","cube","lighting","entities","crdsel"};
+
+int glMesC;
+int tick;
+
+OPENGLMESSAGE *glMes;
+
+unsigned int shaderProgram;
+unsigned int shaderProgramFont;
+unsigned int VBO;
+
+unsigned int vertexShader;
+unsigned int fragmentShader;
+unsigned int vertexShaderFont;
+unsigned int fragmentShaderFont;
+unsigned int mapText;
+unsigned int mapTextFont;
+unsigned int *blockTextures[30];
+unsigned int entityTexture;
+unsigned int mapdataText;
+unsigned int VAO;
+
+unsigned int totalCar;
+
+long long fps = 1;
+
+PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR), 1,
+PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,PFD_TYPE_RGBA,
+24,0, 0, 0, 0, 0, 0,0,0,0,
+0,0,0,0,32,0,0,PFD_MAIN_PLANE,
+0,0,0,0	};
+
+float quad[8192]  = {1.0,1.0 ,0.999,1.0,0.0,1.0,
+					-1.0,1.0 ,0.999,1.0,0.0,1.0,
+					1.0,-1.0 ,0.999,1.0,0.0,1.0,
+					-1.0,-1.0,0.999,1.0,0.0,1.0,
+					-1.0,1.0 ,0.999,1.0,0.0,1.0,
+					1.0,-1.0 ,0.999,1.0,0.0,1.0};
+
+void drawChar(int c,float x,float y,float z,float id,float xsize,float ysize){
+	xsize /= 1.7777778;
+	quad[totalCar * 36 + 36]    = x + xsize;
+	quad[totalCar * 36 + 36+1]  = y;
+	quad[totalCar * 36 + 36+2]  = z;
+	quad[totalCar * 36 + 36+3]  = 0.1 + (float)(c % 10) / 10;
+	quad[totalCar * 36 + 36+4]  = 0.25 + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+5]  = id;
+	quad[totalCar * 36 + 36+6]  = x;
+	quad[totalCar * 36 + 36+7]  = y;
+	quad[totalCar * 36 + 36+8]  = z;
+	quad[totalCar * 36 + 36+9] = (float)(c % 10) / 10;
+	quad[totalCar * 36 + 36+10] = 0.25 + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+11] = id;
+	quad[totalCar * 36 + 36+12] = x + xsize;
+	quad[totalCar * 36 + 36+13] = y + ysize;
+	quad[totalCar * 36 + 36+14] = z;
+	quad[totalCar * 36 + 36+15] = 0.1 + (float)(c % 10) / 10;
+	quad[totalCar * 36 + 36+16] = 0.0 + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+17] = id;
+	quad[totalCar * 36 + 36+18] = x;
+	quad[totalCar * 36 + 36+19] = y + ysize;
+	quad[totalCar * 36 + 36+20] = z;
+	quad[totalCar * 36 + 36+21] = (float)(c % 10) / 10;
+	quad[totalCar * 36 + 36+22] = 0.0 + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+23] = id;
+	quad[totalCar * 36 + 36+24] = x;
+	quad[totalCar * 36 + 36+25] = y;
+	quad[totalCar * 36 + 36+26] = z;
+	quad[totalCar * 36 + 36+27] = (float)(c % 10) / 10;
+	quad[totalCar * 36 + 36+28] = 0.25 + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+29] = id;
+	quad[totalCar * 36 + 36+30] = x + xsize;
+	quad[totalCar * 36 + 36+31] = y + ysize;
+	quad[totalCar * 36 + 36+32] = z;
+	quad[totalCar * 36 + 36+33] = 0.1 + (float)(c % 10) / 10;
+	quad[totalCar * 36 + 36+34] = 0.0 + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+35] = id;
+	glBufferData(GL_ARRAY_BUFFER,(totalCar * 36 + 36) * sizeof(float),quad,GL_DYNAMIC_DRAW);
+	totalCar++;
+}
+
+void drawSprite(float x,float y,float z,float id,float xsize,float ysize){
+	xsize /= 1.7777778;
+	quad[totalCar * 36 + 36]    = x + xsize;
+	quad[totalCar * 36 + 36+1]  = y;
+	quad[totalCar * 36 + 36+2]  = z;
+	quad[totalCar * 36 + 36+3]  = 1.0;
+	quad[totalCar * 36 + 36+4]  = 0.0;
+	quad[totalCar * 36 + 36+5]  = id;
+	quad[totalCar * 36 + 36+6]  = x;
+	quad[totalCar * 36 + 36+7]  = y;
+	quad[totalCar * 36 + 36+8]  = z;
+	quad[totalCar * 36 + 36+9]  = 0.0;
+	quad[totalCar * 36 + 36+10] = 0.0;
+	quad[totalCar * 36 + 36+11] = id;
+	quad[totalCar * 36 + 36+12] = x + xsize;
+	quad[totalCar * 36 + 36+13] = y + ysize;
+	quad[totalCar * 36 + 36+14] = z;
+	quad[totalCar * 36 + 36+15] = 1.0;
+	quad[totalCar * 36 + 36+16] = 1.0;
+	quad[totalCar * 36 + 36+17] = id;
+	quad[totalCar * 36 + 36+18] = x;
+	quad[totalCar * 36 + 36+19] = y + ysize;
+	quad[totalCar * 36 + 36+20] = z;
+	quad[totalCar * 36 + 36+21] = 0.0;
+	quad[totalCar * 36 + 36+22] = 1.0;
+	quad[totalCar * 36 + 36+23] = id;
+	quad[totalCar * 36 + 36+24] = x;
+	quad[totalCar * 36 + 36+25] = y;
+	quad[totalCar * 36 + 36+26] = z;
+	quad[totalCar * 36 + 36+27] = 0.0;
+	quad[totalCar * 36 + 36+28] = 0.0;
+	quad[totalCar * 36 + 36+29] = id;
+	quad[totalCar * 36 + 36+30] = x + xsize;
+	quad[totalCar * 36 + 36+31] = y + ysize;
+	quad[totalCar * 36 + 36+32] = z;
+	quad[totalCar * 36 + 36+33] = 1.0;
+	quad[totalCar * 36 + 36+34] = 1.0;
+	quad[totalCar * 36 + 36+35] = id;
+	glBufferData(GL_ARRAY_BUFFER,(totalCar * 36 + 36) * sizeof(float),quad,GL_DYNAMIC_DRAW);
+	totalCar++;
+}
+
+void drawVar(float x,float y,int val){
+	if(val == 0){
+		drawChar(0,x+0.03,y,-0.99,0,0.04,0.04);
+		return;
+	}
+	int size;
+	int tval = val;
+	while(tval > 0){
+		tval /= 10;
+		size++;
+	}
+	if(!size){
+		drawChar(26,x + 1.0 / 30,y,-0.99,0,0.04,0.04);
+	}
+	else{
+		for(int i = 0;i < size;i++){
+			drawChar(val % 10,x + (float)(size - i) / 30,y,-0.99,0,0.04,0.04);
+			val /= 10;
+		}
+	}
+}
+
+void drawWord(char *str,float x,float y){
+	for(int i = 0;i < strlen(str) + 1;i++){
+		drawChar(str[i] - 87,x+i*0.027,y,-0.99,0,0.04,0.04);
+	}
+}
+
+char *loadTexture(char *name){
+	HANDLE h = CreateFile(name,GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+	int fsize = GetFileSize(h,0);
+	char *text = HeapAlloc(GetProcessHeap(),8,fsize+1);
+	SetFilePointer(h,138,0,0);
+	ReadFile(h,text,fsize - 138,0,0);
+	CloseHandle(h);
+	return text;
+}
+
+char *loadFile(char *name){
+	HANDLE h = CreateFile(name,GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+	int fsize = GetFileSize(h,0);
+	char *file = HeapAlloc(GetProcessHeap(),8,fsize+1);
+	ReadFile(h,file,fsize+1,0,0);
+	CloseHandle(h);
+	return file;
+}
+
+void openGL(){
+	glMes = HeapAlloc(GetProcessHeap(),8,sizeof(OPENGLMESSAGE) * 1024);
+	
+	VERTsource     = loadFile("shaders/vertex.vert");
+	FRAGsource     = loadFile("shaders/fragment.frag");
+	VERTsourceFont = loadFile("shaders/fontvert.vert");
+	FRAGsourceFont = loadFile("shaders/fontfrag.frag");
+
+	fontImage    = loadTexture("textures/font.bmp");
+	epicTexture  = loadTexture("textures/epic_texture.bmp");
+	slope        = loadTexture("textures/slope.bmp");
+	spikes       = loadTexture("textures/spikes.bmp");
+
+	SetPixelFormat(dc, ChoosePixelFormat(dc, &pfd), &pfd);
+	wglMakeCurrent(dc, wglCreateContext(dc));
+
+	glewInit();
+	glEnable(GL_DEPTH_TEST);  
+	shaderProgram = glCreateProgram();
+	shaderProgramFont = glCreateProgram();
+	vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	vertexShaderFont = glCreateShader(GL_VERTEX_SHADER);
+	fragmentShaderFont = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(vertexShader,1,(const char**)&VERTsource,0);
+	glShaderSource(fragmentShader,1,(const char**)&FRAGsource,0);
+	glShaderSource(vertexShaderFont,1,(const char**)&VERTsourceFont,0);
+	glShaderSource(fragmentShaderFont,1,(const char**)&FRAGsourceFont,0);
+	glCompileShader(vertexShader);
+	glCompileShader(fragmentShader);
+	glCompileShader(vertexShaderFont);
+	glCompileShader(fragmentShaderFont);
+	char *bericht = HeapAlloc(GetProcessHeap(),8,1000);
+	glGetShaderInfoLog(fragmentShader,1000,0,bericht);
+	printf("%s\n",bericht);
+	glGetShaderInfoLog(vertexShader,1000,0,bericht);
+	printf("%s\n",bericht);
+	glAttachShader(shaderProgram,vertexShader);
+	glAttachShader(shaderProgram,fragmentShader);
+	glAttachShader(shaderProgramFont,vertexShaderFont);
+	glAttachShader(shaderProgramFont,fragmentShaderFont);
+	glLinkProgram(shaderProgram);
+	glLinkProgram(shaderProgramFont);
+	glUseProgram(shaderProgram);
+
+	glGenTextures(1,&mapText);
+	glGenTextures(1,&mapTextFont);
+	glGenTextures(30,(void*)blockTextures);
+	glGenTextures(1,&mapdataText);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_3D,mapText);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,map);
+	glGenerateMipmap(GL_TEXTURE_3D);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D,(unsigned int)blockTextures[0]);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,2068,1024,0,GL_RGBA,GL_UNSIGNED_BYTE,epicTexture);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,mapTextFont);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,320,144,0,GL_RGBA,GL_UNSIGNED_BYTE,fontImage);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D,(unsigned int)blockTextures[1]);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,32,32,0,GL_RGBA,GL_UNSIGNED_BYTE,spikes);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D,(unsigned int)blockTextures[2]);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,1024,1024,0,GL_RGBA,GL_UNSIGNED_BYTE,slope);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_1D,entityTexture);
+	glTexImage1D(GL_TEXTURE_1D,0,GL_RGBA32F,256,0,GL_RGBA,GL_FLOAT,entity);
+	glGenerateMipmap(GL_TEXTURE_1D);
+
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_3D,mapdataText);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,mapdata);
+	glGenerateMipmap(GL_TEXTURE_3D);
+
+	glUniform1i(glGetUniformLocation(shaderProgram,"map"),1);
+	glUniform1i(glGetUniformLocation(shaderProgram,"epicTexture"),2);
+	glUniform1i(glGetUniformLocation(shaderProgram,"spikes"),3);
+	glUniform1i(glGetUniformLocation(shaderProgram,"slope"),4);
+	glUniform1i(glGetUniformLocation(shaderProgram,"entities"),5);
+	glUniform1i(glGetUniformLocation(shaderProgram,"mapdata"),6);
+
+	glCreateBuffers(1,&VBO);	
+	glBindBuffer(GL_ARRAY_BUFFER,VBO);
+	glBufferData(GL_ARRAY_BUFFER,36 * sizeof(float),quad,GL_DYNAMIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0,3,GL_FLOAT,0,6 * sizeof(float),(void*)0);
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1,2,GL_FLOAT,0,6 * sizeof(float),(void*)(3 * sizeof(float)));
+
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2,1,GL_FLOAT,0,6 * sizeof(float),(void*)(5 * sizeof(float)));
+
+	glUniform2i(glGetUniformLocation(shaderProgram,"reso"),properties->xres,properties->yres);
+	glUniform2f(glGetUniformLocation(shaderProgram,"fov"),player->xfov,player->yfov);
+	glUniform1i(glGetUniformLocation(shaderProgram,"mapSz"),properties->lvlSz);
+	glUniform1f(glGetUniformLocation(shaderProgram,"Brightness"),brightness);
+
+	glUseProgram(shaderProgramFont);
+	glUniform2i(glGetUniformLocation(shaderProgramFont,"reso"),properties->xres,properties->yres);
+	glUseProgram(shaderProgram);
+	for(;;){
+		if(settings & 0x80){
+			SwapBuffers(dc);
+			Sleep(100);
+		}
+		else{
+			glUseProgram(shaderProgram);
+			long long fpstime = _rdtsc();
+			drawChar(33,-0.9,0.9,-0.99,0,0.04,0.04);
+			drawVar(-0.9,0.9,player->xpos);
+			drawChar(34,-0.75,0.9,-0.99,0,0.04,0.04);
+			drawVar(-0.75,0.9,player->ypos);
+			drawChar(35,-0.6,0.9,-0.99,0,0.04,0.04);
+			drawVar(-0.6,0.9,player->zpos);
+
+			drawVar(-0.9,0.8,fabs(player->xvel * 100));
+			drawVar(-0.75,0.8,fabsf(player->yvel * 100));
+			drawVar(-0.6,0.8,fabsf(player->zvel * 100));
+
+			drawChar(15,-0.96,0.7,-0.99,0,0.04,0.04);
+			drawChar(25,-0.93,0.7,-0.99,0,0.04,0.04);
+			drawChar(28,-0.9,0.7,-0.99,0,0.04,0.04);
+
+			drawChar(36,-0.01,-0.02,-0.99,0,0.04,0.04);
+
+			drawVar(-0.9,0.7,3400000000 / fps);
+
+			if(blockSel < 16){
+				drawWord(words[blockSel],-0.9,-0.9);
+			}
+			if(toolSel < 5){
+				drawWord(words2[toolSel],-0.9,-0.78);
+			}
+			if(toolSel == 2 || toolSel == 5){
+				drawVar(0.8,-0.90,colorSel.r);
+				drawVar(0.8,-0.85,colorSel.g);
+				drawVar(0.8,-0.80,colorSel.b);
+				drawVar(0.8,-0.75,colorSel.a);
+				drawVar(0.8,-0.75,colorSel.a);
+			}
+			while(glMesC > 0){
+				glMesC--;
+				switch(glMes[glMesC].id){
+				case 0:	
+					glViewport(0,0,properties->xres,properties->yres);
+					glUniform2i(glGetUniformLocation(shaderProgram,"reso"),properties->xres,properties->yres);
+					glUseProgram(shaderProgramFont);
+					glUniform2i(glGetUniformLocation(shaderProgramFont,"reso"),properties->xres,properties->yres);
+					glUseProgram(shaderProgram);
+					break;
+				case 1:
+					glActiveTexture(GL_TEXTURE1);
+					glTexSubImage3D(GL_TEXTURE_3D,0,glMes[glMesC].data1,glMes[glMesC].data2,glMes[glMesC].data3,1,1,1,GL_RGBA,GL_UNSIGNED_BYTE,map+(glMes[glMesC].data1 + glMes[glMesC].data2 * properties->lvlSz + glMes[glMesC].data3 * properties->lvlSz * properties->lvlSz) * 4);
+					break;
+				case 2:
+					glTexSubImage3D(GL_TEXTURE_3D,0,glMes[glMesC].data1,glMes[glMesC].data2,glMes[glMesC].data3,glMes[glMesC].data4,glMes[glMesC].data5,glMes[glMesC].data6,GL_RED,GL_UNSIGNED_BYTE,map+glMes[glMesC].data1 + glMes[glMesC].data2 * properties->lvlSz + glMes[glMesC].data3 * properties->lvlSz * properties->lvlSz);
+					break;
+				case 3:
+					glActiveTexture(GL_TEXTURE1);
+					glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,map);
+					break;
+				case 4:
+					drawSprite(glMes[glMesC].fdata1,glMes[glMesC].fdata2,glMes[glMesC].fdata5,glMes[glMesC].fdata6,glMes[glMesC].fdata3,glMes[glMesC].fdata4);
+					break;
+				case 5:
+					glActiveTexture(GL_TEXTURE6);
+					glTexSubImage3D(GL_TEXTURE_3D,0,glMes[glMesC].data1,glMes[glMesC].data2,glMes[glMesC].data3,1,1,1,GL_RGBA,GL_UNSIGNED_BYTE,mapdata+(glMes[glMesC].data1 + glMes[glMesC].data2 * properties->lvlSz + glMes[glMesC].data3 * properties->lvlSz * properties->lvlSz) * 4);
+					break;
+				case 6:
+					glActiveTexture(GL_TEXTURE6);
+					glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,mapdata);
+					break;
+				}
+			}
+			sprite = 0;
+			glActiveTexture(GL_TEXTURE6);
+			glTexImage1D(GL_TEXTURE_1D,0,GL_RGBA32F,256,0,GL_RGBA,GL_FLOAT,entity); 
+			glUniform2f(glGetUniformLocation(shaderProgram,"angle"),player->xangle,player->yangle);
+			glUniform4f(glGetUniformLocation(shaderProgram,"dir"),player->xdir,player->ydir, player->zdir,player->xydir);
+			glUniform3f(glGetUniformLocation(shaderProgram,"Pos"),player->xpos,player->ypos,player->zpos);
+			glUniform1i(glGetUniformLocation(shaderProgram,"tick"),tick);
+			glUniform1i(glGetUniformLocation(shaderProgram,"state"),settings);
+			glUniform1i(glGetUniformLocation(shaderProgram,"entityC"),entityC);
+			glUniform1i(glGetUniformLocation(shaderProgram,"renderDistance"),properties->renderDistance);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+			glDrawArrays(GL_TRIANGLES,0,6);
+			glUseProgram(shaderProgramFont); 
+			glDrawArrays(GL_TRIANGLES,6,totalCar*6+6);
+			SwapBuffers(dc);
+			totalCar = 0;
+			fps = _rdtsc() - fpstime;
+			if(3400000000 / fps < 50){
+				properties->renderDistance-=4;
+			}
+			else if(3400000000 / fps > 100 && properties->renderDistance < 255){
+				properties->renderDistance++;
+			}
+		}
+	}
+}
