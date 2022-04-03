@@ -1,4 +1,4 @@
-﻿#include <windows.h>
+﻿	#include <windows.h>
 #include <glew.h>
 #include <main.h>
 #include <stdio.h>
@@ -14,9 +14,10 @@ char *epicTexture;
 char *epicTexture2;
 char *slope;
 char *spikes;
+char *chessPieces;
 
-char *words[]  = {"air","rgb","water","mirror","animation","purple","multicolor","white",
-	"redlight","greenlight","bluelight","whitelight","bounce","mirror","spikes","normal",
+char *words[]  = {"air","rgb","water","mirror","sphere","tower","tegeltjes","white",
+	"light","mist","customslope","glass","bounce","mirror","spikes","normal",
 	"donut","shape1","greekpillar",
 	
 	};
@@ -40,6 +41,7 @@ unsigned int mapTextFont;
 unsigned int *blockTextures[30];
 unsigned int entityTexture;
 unsigned int mapdataText;
+unsigned int chessText;
 unsigned int VAO;
 
 unsigned int totalCar;
@@ -198,6 +200,8 @@ void openGL(){
 	VERTsourceFont = loadFile("shaders/fontvert.vert");
 	FRAGsourceFont = loadFile("shaders/fontfrag.frag");
 
+	chessPieces = loadFile("3D models/model16.mdl");
+
 	fontImage    = loadTexture("textures/font.bmp");
 	epicTexture  = loadTexture("textures/epic_texture.bmp");
 	slope        = loadTexture("textures/slope.bmp");
@@ -239,6 +243,7 @@ void openGL(){
 	glGenTextures(1,&mapTextFont);
 	glGenTextures(30,(void*)blockTextures);
 	glGenTextures(1,&mapdataText);
+	glGenTextures(1,&chessText);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,mapText);
@@ -277,12 +282,18 @@ void openGL(){
 	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,mapdata);
 	glGenerateMipmap(GL_TEXTURE_3D);
 
+	glActiveTexture(GL_TEXTURE7);
+	glBindTexture(GL_TEXTURE_3D,chessText);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_RED,16,16,96,0,GL_RED,GL_UNSIGNED_BYTE,chessPieces);
+	glGenerateMipmap(GL_TEXTURE_3D);
+
 	glUniform1i(glGetUniformLocation(shaderProgram,"map"),1);
 	glUniform1i(glGetUniformLocation(shaderProgram,"epicTexture"),2);
 	glUniform1i(glGetUniformLocation(shaderProgram,"spikes"),3);
 	glUniform1i(glGetUniformLocation(shaderProgram,"slope"),4);
 	glUniform1i(glGetUniformLocation(shaderProgram,"entities"),5);
 	glUniform1i(glGetUniformLocation(shaderProgram,"mapdata"),6);
+	glUniform1i(glGetUniformLocation(shaderProgram,"chessModels"),7);
 
 	glCreateBuffers(1,&VBO);	
 	glBindBuffer(GL_ARRAY_BUFFER,VBO);
@@ -338,13 +349,12 @@ void openGL(){
 			if(toolSel < 5){
 				drawWord(words2[toolSel],-0.9,-0.78);
 			}
-			if(toolSel == 2 || toolSel == 5){
-				drawVar(0.8,-0.90,colorSel.r);
-				drawVar(0.8,-0.85,colorSel.g);
-				drawVar(0.8,-0.80,colorSel.b);
-				drawVar(0.8,-0.75,colorSel.a);
-				drawVar(0.8,-0.75,colorSel.a);
-			}
+			drawVar(0.8,-0.90,colorSel.r);
+			drawVar(0.8,-0.85,colorSel.g);
+			drawVar(0.8,-0.80,colorSel.b);
+			drawVar(0.8,-0.75,colorSel.a);
+			drawVar(0.8,-0.75,colorSel.a);
+
 			while(glMesC > 0){
 				glMesC--;
 				switch(glMes[glMesC].id){
@@ -389,10 +399,12 @@ void openGL(){
 			glUniform1i(glGetUniformLocation(shaderProgram,"state"),settings);
 			glUniform1i(glGetUniformLocation(shaderProgram,"entityC"),entityC);
 			glUniform1i(glGetUniformLocation(shaderProgram,"renderDistance"),properties->renderDistance);
+			glUniformMatrix3fv(glGetUniformLocation(shaderProgram, "cameraMatrix"), 1, GL_FALSE, (void*)&cameraMatrix);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 			glDrawArrays(GL_TRIANGLES,0,6);
 			glUseProgram(shaderProgramFont); 
 			glDrawArrays(GL_TRIANGLES,6,totalCar*6+6);
+			glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, 1920, 1080);  
 			SwapBuffers(dc);
 			totalCar = 0;
 			fps = _rdtsc() - fpstime;

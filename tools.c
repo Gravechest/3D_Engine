@@ -50,10 +50,9 @@ void tools(){
 	switch(toolSel){
 	case 0:{
 		RAY ray = rayCreate(player->xpos,player->ypos,player->zpos,player->xdir*player->xydir,player->ydir*player->xydir,player->zdir);
-		for(int i = 0;i < 254;i++){
-			rayItterate(&ray);
+		while(ray.ix>=0&&ray.ix<=properties->lvlSz&&ray.iy>=0&&ray.iy<=properties->lvlSz&&ray.iz>=0&&ray.iz<=properties->lvlSz){
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
-			if(map[block]){
+			if(map[block] && map[block] != 9){
 				switch(ray.side){
 				case 0:
 					if(ray.vx < 0.0){
@@ -87,13 +86,6 @@ void tools(){
 					break;
 				}
 				switch(blockSel){
-				case 8:
-					mapdata[block]=50;
-					mapdata[block+1]=50;
-					mapdata[block+2]=50;
-					glMes[glMesC].id = 6;
-					glMesC++;
-					break;
 				case 67:
 					toolSel = 4;
 					selarea.x = ray.x;
@@ -103,16 +95,13 @@ void tools(){
 				}
 				break;
 			}
+			rayItterate(&ray);
 		}
 		break;
 		}
 	case 1:{
 		RAY ray = rayCreate(player->xpos,player->ypos,player->zpos,player->xdir*player->xydir,player->ydir*player->xydir,player->zdir);
-		for(int i = 0;i < 254;i++){
-			rayItterate(&ray);
-			if(ray.x < 0 || ray.y < 0 || ray.z < 0){
-				break;
-			}	
+		while(ray.ix>=0&&ray.ix<=properties->lvlSz&&ray.iy>=0&&ray.iy<=properties->lvlSz&&ray.iz>=0&&ray.iz<=properties->lvlSz){
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block]){
 				if(!selarea.x && !selarea.y && !selarea.z){
@@ -144,27 +133,30 @@ void tools(){
 							for(int i3 = selarea.z;i3 <= z;i3++){
 								int block = (i + i2 * properties->lvlSz + i3 * properties->lvlSz * properties->lvlSz) * 4;
 								map[block] = blockSel;
+								mapdata[block] = colorSel.r;
+								mapdata[block+1] = colorSel.g;
+								mapdata[block+2] = colorSel.b;
+								mapdata[block+3] = colorSel.a;
 							}
 						}
 					}
 					selarea.x = 0;
 					selarea.y = 0;
 					selarea.z = 0;
+					glMes[glMesC].id = 6;
+					glMesC++;
 					glMes[glMesC].id = 3;
 					glMesC++;
 				}
 				break;
 			}
+			rayItterate(&ray);
 		}
 		break;
 	}
 	case 2:{
 		RAY ray = rayCreate(player->xpos,player->ypos,player->zpos,player->xdir*player->xydir,player->ydir*player->xydir,player->zdir);
-		for(int i = 0;i < 254;i++){
-			rayItterate(&ray);
-			if(ray.x < 0 || ray.y < 0 || ray.z < 0){
-				break;
-			}	
+		while(ray.ix>=0&&ray.ix<=properties->lvlSz&&ray.iy>=0&&ray.iy<=properties->lvlSz&&ray.iz>=0&&ray.iz<=properties->lvlSz){
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block]){
 				if(GetKeyState(VK_LCONTROL) & 0x80){
@@ -192,78 +184,18 @@ void tools(){
 				}
 				break;
 			}
+			rayItterate(&ray);
 		}
 		break;	
 		}
 	case 3:
 		break;		
 	case 4:{
-		RAY ray = rayCreate(player->xpos,player->ypos,player->zpos,player->xdir*player->xydir,player->ydir*player->xydir,player->zdir);
-		for(int i = 0;i < 254;i++){
-			rayItterate(&ray);
-			if(ray.x < 0 || ray.y < 0 || ray.z < 0){
-				break;
-			}	
-			int block = crds2map(ray.ix,ray.iy,ray.iz);
-			if(map[block]){
-				if(!selarea.x && !selarea.y && !selarea.z){
-					selarea.x = ray.x;
-					selarea.y = ray.y;
-					selarea.z = ray.z;
-				}
-				else{
-					block = (selarea.x+selarea.y*properties->lvlSz+selarea.z*properties->lvlSz*properties->lvlSz)*4;
-					if(ray.z - (int)ray.z == 0){
-						mapdata[block]   = ray.x;
-						mapdata[block+1] = ray.y;
-						mapdata[block+2] = ray.z-1;
-					}
-					else if(ray.y - (int)ray.y == 0){
-						mapdata[block]   = ray.x;
-						mapdata[block+1] = ray.y-1;
-						mapdata[block+2] = ray.z;
-					}
-					else if(ray.y - (int)ray.y > 0.99998){
-						mapdata[block]   = ray.x;
-						mapdata[block+1] = ray.y+1;
-						mapdata[block+2] = ray.z;
-					}
-					else if(ray.z - (int)ray.z > 0.99998){
-						mapdata[block]   = ray.x;
-						mapdata[block+1] = ray.y;
-						mapdata[block+2] = ray.z+1;
-					}
-					else if(ray.x - (int)ray.x > 0.99998){
-						mapdata[block]   = ray.x+1;
-						mapdata[block+1] = ray.y;
-						mapdata[block+2] = ray.z;
-					}
-					else{
-						mapdata[block]   = ray.x-1;
-						mapdata[block+1] = ray.y;
-						mapdata[block+2] = ray.z;
-					}
-					glMes[glMesC].data1 = selarea.x;
-					glMes[glMesC].data2 = selarea.y;
-					glMes[glMesC].data3 = selarea.z;
-					glMes[glMesC].id = 5;
-					glMesC++;
-					selarea.x = 0;
-					selarea.y = 0;
-					selarea.z = 0;
-				}
-				break;
-			}
-		}
 		break;
 	}
 	case 5:{
 		RAY ray = rayCreate(player->xpos,player->ypos,player->zpos,player->xdir*player->xydir,player->ydir*player->xydir,player->zdir);
-		for(int i = 0;i < 254;i++){
-			rayItterate(&ray);
-			if(ray.x < 0 || ray.y < 0 || ray.z < 0){
-				break;
-			}
+		while(ray.ix>=0&&ray.ix<=properties->lvlSz&&ray.iy>=0&&ray.iy<=properties->lvlSz&&ray.iz>=0&&ray.iz<=properties->lvlSz){
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block]){
 				mapdata[block]   = colorSel.r;
@@ -272,6 +204,50 @@ void tools(){
 				mapdata[block+3] = colorSel.a;
 				glMes[glMesC].id = 6;
 				glMesC++;
+				break;
+			}
+			rayItterate(&ray);
+		}
+		break;
+		}
+	case 6:{
+		RAY ray = rayCreate(player->xpos,player->ypos,player->zpos,player->xdir*player->xydir,player->ydir*player->xydir,player->zdir);
+		for(int i = 0;i < 254;i++){
+			rayItterate(&ray);
+			int block = crds2map(ray.ix,ray.iy,ray.iz);
+			if(map[block]){
+				switch(ray.side){
+				case 0:
+					if(ray.vx < 0.0){
+						ray.x+=1.0;
+						updateBlock(block + 1 * 4,9);
+					}
+					else{
+						ray.x-=1.0;
+						updateBlock(block - 1 * 4,9);
+					}
+					break;
+				case 1:
+					if(ray.vy < 0.0){
+						ray.y+=1.0;
+						updateBlock(block + properties->lvlSz * 4,9);
+					}
+					else{
+						ray.y-=1.0;
+						updateBlock(block - properties->lvlSz * 4,9);
+					}
+					break;
+				case 2:
+					if(ray.vz < 0.0){
+						ray.z+=1.0;
+						updateBlock(block + properties->lvlSz * properties->lvlSz * 4,9);
+					}
+					else{
+						ray.z-=1.0;
+						updateBlock(block - properties->lvlSz * properties->lvlSz * 4,9);
+					}
+					break;
+				}
 				break;
 			}
 		}

@@ -12,6 +12,23 @@ typedef struct CVEC3{
 }CVEC3;
 
 typedef struct{
+	float x;
+	float y;
+	float z;
+}VEC3;
+
+typedef struct {
+	VEC3 Right;
+	VEC3 Up;
+	VEC3 Front;
+} Mat3;
+
+typedef struct{
+	float x;
+	float y;
+}VEC2;
+
+typedef struct{
 	float xangle;
 	float yangle;
 
@@ -106,12 +123,6 @@ typedef struct{
 	int iz;
 }RAY;
 
-typedef struct{
-	float x;
-	float y;
-	float z;
-}VEC3;
-
 extern int glMesC;
 
 extern unsigned char blockSel;
@@ -133,6 +144,7 @@ extern int staticentityC;
 extern int settings;
 extern RGB colorSel;
 extern CVEC3 selarea;
+extern Mat3 cameraMatrix;
 
 void openGL();
 void openCLmain();
@@ -145,10 +157,12 @@ void initSound();
 void tools();
 void ittmap();
 void spawnEntity(float x,float y,float z,float vx,float vy,float vz,float sz,int id);
+void updateCamera();
 
 RAY rayCreate(float x,float y,float z,float rx,float ry,float rz);
 
 int crds2map(int x,int y,int z);
+CVEC3 map2crds(int 	map);
 
 char *loadFile(char *name);
 

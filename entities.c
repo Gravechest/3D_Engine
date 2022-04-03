@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#define cos45 (0.5 * sqrt(2))
+
 char sprite;
 
 max3f(float val1,float val2,float val3){
@@ -35,35 +37,52 @@ int crds2map(int x,int y,int z){
 	return ((int)x+(int)y*properties->lvlSz+(int)z*properties->lvlSz*properties->lvlSz)*4;
 }
 
-float spriteXdir(int i){
-	float repx = entity[i].x-player->xpos;
-	float repy = entity[i].y-player->ypos;
-	float dep  = sqrtf(repx*repx+repy*repy);
-	float dcex = cosf(player->xangle) * dep;
-	float dcey = sinf(player->xangle) * dep;
-	float dre  = sqrtf((repx-dcex)*(repx-dcex)+(repy-dcey)*(repy-dcey));
-	dcex = cosf(player->xangle+0.01)*dep;
-	dcey = sinf(player->xangle+0.01)*dep;
-	float dre2 = sqrtf((repx-dcex)*(repx-dcex)+(repy-dcey)*(repy-dcey));
-	float ei;
-	if(dre > dre2){
-		ei = (dre/dep);
-	}
-	else{
-		ei = -(dre/dep);
-	}
-	return ei * fabsf(ei*0.5) + ei * 0.35;
-}
+VEC2 spriteLocation(int i){
+  // XY
+  	VEC2 result;
 
-float spriteYdir(int i){
-	float repx = entity[i].x-player->xpos;
-	float repy = entity[i].y-player->ypos;
-	float repz = entity[i].z-player->zpos;
-	float dep  = sqrtf(repx*repx+repy*repy+repz*repz);
-	float dcez = sinf(player->yangle) * dep;
-	float dre  = dcez - repz;
-	float ei   = -(dre/dep) * 1.45;
-	return ei * fabsf(ei*0.5) + ei * 0.35;
+    float length;
+    //  Variablen kleiner maken, is makkelijker (ff toevoegen btw)
+float posX = player->ydir;
+    float posXZ = player->zdir;
+    float posY = player->xdir;
+    float posZ = player->xydir;
+
+	length = sqrt(posX * posX + posY * posY);
+
+	float normDirX = posX / length;
+	float normDirY = posY / length;
+
+	float entityDirX = player->xpos - entity[i].x;
+	float entityDirY = player->ypos - entity[i].y;
+
+	length = sqrt(entityDirX * entityDirX + entityDirY * entityDirY);
+
+	float normEntityX = entityDirX / length;
+	float normEntityY = entityDirY / length;
+
+	float angle = (normDirX * normEntityX + normDirY * normEntityY) * 2.0 * 0.3;
+	
+	result.x = angle / (cos45);
+
+	length = sqrt(posXZ * posXZ + posZ * posZ);
+
+	normDirX = posXZ / length;
+	float normDirZ = posZ / length;
+
+	entityDirX = player->xpos - entity[i].x;
+	float entityDirZ = player->zpos - entity[i].z;
+
+	length = sqrt(entityDirX * entityDirX + entityDirZ * entityDirZ);
+
+	normEntityX = entityDirX / length;
+	float normEntityZ = entityDirZ / length;
+
+	angle = (normDirX * normEntityX + normDirZ * normEntityZ) * 2.0 * 0.3;
+	
+	result.y = angle / (cos45);
+
+  return result;
 }
 
 float spriteSize(int i){
@@ -73,6 +92,7 @@ float spriteSize(int i){
 	float s = sqrtf(repx*repx+repy*repy+repz*repz);
 	return 2.0/s;
 }
+
 
 unsigned char checkLOS(float x,float y,float z){
 	float nx = player->xpos-x;
@@ -94,6 +114,7 @@ unsigned char checkLOS(float x,float y,float z){
 		}
 	}
 }
+
 
 void entities(){
 	for(;;){
@@ -146,10 +167,12 @@ void entities(){
 			if(!checkLOS(rpx,rpy,rpz)){
 				continue;
 			}
+			VEC2 sprl = spriteLocation(i);
+
 			glMes[glMesC].id = 4;
 			float sprz = spriteSize(i)*entity[i].sz;
-			glMes[glMesC].fdata1 = spriteXdir(i)-sprz/2.0/1.69;
-			glMes[glMesC].fdata2 = spriteYdir(i)-sprz/2.0;
+			glMes[glMesC].fdata1 = sprl.x;
+			glMes[glMesC].fdata2 = sprl.y;
 			glMes[glMesC].fdata3 = sprz;
 			glMes[glMesC].fdata4 = sprz;
 			glMes[glMesC].fdata5 = -sprz;
@@ -162,10 +185,6 @@ void entities(){
 		}
 	}
 }
-
-
-
-
 
 
 

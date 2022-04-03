@@ -16,8 +16,8 @@ void initSound(){
 void sound(int type){
 	switch(type){
 	case 1:
-		wavehdr.dwBufferLength = 14300;
-		wavehdr.dwBytesRecorded = 14300;
+		wavehdr.dwBufferLength = 1430;
+		wavehdr.dwBytesRecorded = 1430;
 		wavehdr.lpData = soundfile;
 		waveOutWrite(soundOut,&wavehdr,sizeof(WAVEHDR));
 		break;
