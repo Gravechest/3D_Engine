@@ -1,4 +1,4 @@
-﻿	#include <windows.h>
+﻿#include <windows.h>
 #include <glew.h>
 #include <main.h>
 #include <stdio.h>
@@ -15,13 +15,14 @@ char *epicTexture2;
 char *slope;
 char *spikes;
 char *chessPieces;
+char *models8;
 
 char *words[]  = {"air","rgb","water","mirror","sphere","tower","tegeltjes","white",
 	"light","mist","customslope","glass","bounce","mirror","spikes","normal",
 	"donut","shape1","greekpillar",
 	
 	};
-char *words2[] = {"normal","cube","lighting","entities","crdsel"};
+char *words2[] = {"normal","cube","lighting","entities","colorselect"};
 
 int glMesC;
 int tick;
@@ -42,11 +43,14 @@ unsigned int *blockTextures[30];
 unsigned int entityTexture;
 unsigned int mapdataText;
 unsigned int chessText;
+unsigned int models8Text;
 unsigned int VAO;
 
 unsigned int totalCar;
 
 long long fps = 1;
+
+VEC2 mousePos;
 
 PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR), 1,
 PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,PFD_TYPE_RGBA,
@@ -104,7 +108,6 @@ void drawChar(int c,float x,float y,float z,float id,float xsize,float ysize){
 }
 
 void drawSprite(float x,float y,float z,float id,float xsize,float ysize){
-	xsize /= 1.7777778;
 	quad[totalCar * 36 + 36]    = x + xsize;
 	quad[totalCar * 36 + 36+1]  = y;
 	quad[totalCar * 36 + 36+2]  = z;
@@ -167,9 +170,12 @@ void drawVar(float x,float y,int val){
 	}
 }
 
-void drawWord(char *str,float x,float y){
-	for(int i = 0;i < strlen(str) + 1;i++){
-		drawChar(str[i] - 87,x+i*0.027,y,-0.99,0,0.04,0.04);
+void drawWord(char *str,float x,float y,float id){
+	for(int i = 0;i < strlen(str);i++){
+		if(str[i] == ' '){
+			continue;
+		}
+		drawChar(str[i] - 87,x+i*0.0235,y,-0.1,id,0.04,0.04);
 	}
 }
 
@@ -192,6 +198,12 @@ char *loadFile(char *name){
 	return file;
 }
 
+float distance(VEC2 p1,VEC2 p2){
+	float r1 = p1.x-p2.x;
+	float r2 = p1.y-p2.y;
+	return sqrtf(r1*r1+r2*r2);
+}
+
 void openGL(){
 	glMes = HeapAlloc(GetProcessHeap(),8,sizeof(OPENGLMESSAGE) * 1024);
 	
@@ -201,6 +213,7 @@ void openGL(){
 	FRAGsourceFont = loadFile("shaders/fontfrag.frag");
 
 	chessPieces = loadFile("3D models/model16.mdl");
+	models8     = loadFile("3D models/swastika.mdl");
 
 	fontImage    = loadTexture("textures/font.bmp");
 	epicTexture  = loadTexture("textures/epic_texture.bmp");
@@ -211,6 +224,8 @@ void openGL(){
 	wglMakeCurrent(dc, wglCreateContext(dc));
 
 	glewInit();
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);  
 	shaderProgram = glCreateProgram();
 	shaderProgramFont = glCreateProgram();
@@ -244,6 +259,7 @@ void openGL(){
 	glGenTextures(30,(void*)blockTextures);
 	glGenTextures(1,&mapdataText);
 	glGenTextures(1,&chessText);
+	glGenTextures(1,&models8Text);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,mapText);
@@ -287,6 +303,11 @@ void openGL(){
 	glTexImage3D(GL_TEXTURE_3D,0,GL_RED,16,16,96,0,GL_RED,GL_UNSIGNED_BYTE,chessPieces);
 	glGenerateMipmap(GL_TEXTURE_3D);
 
+	glActiveTexture(GL_TEXTURE8);
+	glBindTexture(GL_TEXTURE_3D,models8Text);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_RED,8,8,8,0,GL_RED,GL_UNSIGNED_BYTE,models8);
+	glGenerateMipmap(GL_TEXTURE_3D);
+
 	glUniform1i(glGetUniformLocation(shaderProgram,"map"),1);
 	glUniform1i(glGetUniformLocation(shaderProgram,"epicTexture"),2);
 	glUniform1i(glGetUniformLocation(shaderProgram,"spikes"),3);
@@ -294,6 +315,7 @@ void openGL(){
 	glUniform1i(glGetUniformLocation(shaderProgram,"entities"),5);
 	glUniform1i(glGetUniformLocation(shaderProgram,"mapdata"),6);
 	glUniform1i(glGetUniformLocation(shaderProgram,"chessModels"),7);
+	glUniform1i(glGetUniformLocation(shaderProgram,"models8"),8);
 
 	glCreateBuffers(1,&VBO);	
 	glBindBuffer(GL_ARRAY_BUFFER,VBO);
@@ -339,22 +361,45 @@ void openGL(){
 			drawChar(25,-0.93,0.7,-0.99,0,0.04,0.04);
 			drawChar(28,-0.9,0.7,-0.99,0,0.04,0.04);
 
-			drawChar(36,-0.01,-0.02,-0.99,0,0.04,0.04);
-
 			drawVar(-0.9,0.7,3400000000 / fps);
 
 			if(blockSel < 16){
-				drawWord(words[blockSel],-0.9,-0.9);
+				drawWord(words[blockSel],-0.9,-0.9,0.0);
 			}
 			if(toolSel < 5){
-				drawWord(words2[toolSel],-0.9,-0.78);
+				drawWord(words2[toolSel],-0.9,-0.78,0.0);
 			}
 			drawVar(0.8,-0.90,colorSel.r);
 			drawVar(0.8,-0.85,colorSel.g);
 			drawVar(0.8,-0.80,colorSel.b);
 			drawVar(0.8,-0.75,colorSel.a);
 			drawVar(0.8,-0.75,colorSel.a);
-
+			for(int i = 0;i < buttonC;i++){
+				VEC2 buttonMiddle = {button[i].pos.x+0.015f,button[i].pos.y+0.025f};
+				if(distance(mousePos,buttonMiddle)<0.03f){
+					buttonId = button[i].id;
+					drawSprite(button[i].pos.x,button[i].pos.y,-0.05f,4,0.03f,0.05f);
+				}
+				else{
+					drawSprite(button[i].pos.x,button[i].pos.y,-0.05f,3,0.03f,0.05f);
+				}
+			}
+			drawSprite(0.8,-0.65,-0.2,7,0.1,0.1);
+			if(settings & 0x10){
+				POINT p;
+				GetCursorPos(&p);
+				ScreenToClient(window,&p);
+				mousePos.x = (float)p.x/properties->xres*2.0-1.0;
+				mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
+				drawSprite(mousePos.x-0.0075f,mousePos.y-0.0125f,-0.2,6,0.015,0.025);
+				drawWord("settings",-0.11,0.42,0.0);
+				drawWord("create new world",-0.45,-0.35,0.0);
+				drawWord("quit",-0.45,-0.42,0.0);
+				drawSprite(-0.5,-0.5,0.0,2,1.0,1.0);
+			}
+			else{
+				drawChar(36,-0.01,-0.02,-0.99,0,0.04,0.04);
+			}
 			while(glMesC > 0){
 				glMesC--;
 				switch(glMes[glMesC].id){
@@ -389,6 +434,7 @@ void openGL(){
 					break;
 				}
 			}
+			drawSprite(0.0,0.0,0.0,0.0,0.0,0.0);
 			sprite = 0;
 			glActiveTexture(GL_TEXTURE6);
 			glTexImage1D(GL_TEXTURE_1D,0,GL_RGBA32F,256,0,GL_RGBA,GL_FLOAT,entity); 
@@ -400,11 +446,13 @@ void openGL(){
 			glUniform1i(glGetUniformLocation(shaderProgram,"entityC"),entityC);
 			glUniform1i(glGetUniformLocation(shaderProgram,"renderDistance"),properties->renderDistance);
 			glUniformMatrix3fv(glGetUniformLocation(shaderProgram, "cameraMatrix"), 1, GL_FALSE, (void*)&cameraMatrix);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+			glUseProgram(shaderProgramFont);
+			glUniform3f(glGetUniformLocation(shaderProgramFont,"color"),(float)colorSel.r/255.0f,(float)colorSel.g/255.0f,(float)colorSel.b/255.0f);
+			glUseProgram(shaderProgram);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glDrawArrays(GL_TRIANGLES,0,6);
-			glUseProgram(shaderProgramFont); 
+			glUseProgram(shaderProgramFont);
 			glDrawArrays(GL_TRIANGLES,6,totalCar*6+6);
-			glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, 1920, 1080);  
 			SwapBuffers(dc);
 			totalCar = 0;
 			fps = _rdtsc() - fpstime;

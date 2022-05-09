@@ -6,7 +6,6 @@
 #include <glew.h>
 #include <GL/gl.h>
 
-
 #define resx 512
 #define resy 512
 
@@ -19,7 +18,6 @@
 char *CLsource;
 unsigned char *map;
 unsigned char *mapdata;
-float *lightmap;
 
 int settings;
 /*
@@ -27,8 +25,8 @@ bit
 1: fly/walk
 2: fullScreen
 3: lighting
-4: 
-5:
+4: fog
+5: menus
 6:
 7:
 8: pauze
@@ -82,6 +80,25 @@ void playerDeath(){
 	player->yvel = 0;
 	player->zvel = 0;
 }
+
+inline void buttonCreate(VEC2 pos,unsigned char id){
+	button[buttonC].pos.x = pos.x;
+	button[buttonC].pos.y = pos.y;
+	button[buttonC].id    = id;
+	buttonC++;
+}
+
+inline void buttonDestroy(unsigned char id){
+	for(int i = 0;i < buttonC;i++){
+		if(button[i].id == id){
+			
+		}
+	}
+	for(int i = id;i < buttonC;i++){
+		button[i] = button[i+1];
+	}
+	buttonC--;
+}	
 
 void blockDetection(float x,float y,float z,int axis){
 	int block = crds2map(x,y,z);
@@ -275,184 +292,6 @@ void rayItterate(RAY *ray){
     }
 }
 
-void updateLightRay(RAY *ray,float red,float green,float blue){
-	while(green > 0.003 || red > 0.003 || blue > 0.003){
-		rayItterate(ray);
-		if(ray->ix < 0 || ray->iy < 0 || ray->iz < 0 || ray->ix >= properties->lvlSz || ray->iy >= properties->lvlSz || ray->iz >= properties->lvlSz){
-			break;
-		}
-		int block = crds2map(ray->ix,ray->iy,ray->iz);
-		if(map[block]){
-			switch(map[block]){
-			case 9:
-				break;
-			case 20:
-				if((float)rand() / RAND_MAX > 1.0){
-					goto dflt;
-				}
-				break;
-			case 21:
-				break;
-			case 60:
-				break;	
-			dflt:
-			default:{
-				VEC3 p;
-				VEC3 d;
-				switch(ray->side){
-				case 0:
-					if(ray->vx < 0.0){
-						p.x = ray->ix+1.0;
-					}
-					else{
-						p.x = ray->ix;
-					}
-					p.y = ray->y + (ray->sidex - ray->deltax) * ray->vy;
-					p.z = ray->z + (ray->sidex - ray->deltax) * ray->vz;
-					break;
-				case 1:
-					if(ray->vy < 0.0){
-						p.y = ray->iy+1.0;
-					}
-					else{
-						p.y = ray->iy;
-					}
-					p.x = ray->x + (ray->sidey - ray->deltay) * ray->vx;
-					p.z = ray->z + (ray->sidey - ray->deltay) * ray->vz;
-					break;
-				case 2:
-					if(ray->vz < 0.0){
-						p.z = ray->iz+1.0;
-					}
-					else{
-						p.z = ray->iz;
-					}
-					p.x = ray->x + (ray->sidez - ray->deltaz) * ray->vx;
-					p.y = ray->y + (ray->sidez - ray->deltaz) * ray->vy;
-					break;
-				}
-				float r1 = (float)rand() /RAND_MAX * 3.14 - 3.14;
-				float r2 = (float)rand() /RAND_MAX * 3.14 - 3.14;
-				float r3 = r1 + r2;
-				float r4 = (float)rand() /RAND_MAX * 6.28 - 3.14;
-				d.x = cosf(r4) * cosf(r3);
-				d.y = sinf(r4) * cosf(r3);
-				d.z = sinf(r3);
-				switch(ray->side){
-				case 0:
-					if(ray->vx < 0.0 && d.x < 0.0){
-						red = 0.0;
-						green = 0.0;
-						blue = 0.0;
-					}
-					if(ray->vx >= 0.0 && d.x >= 0.0){
-						red = 0.0;
-						green = 0.0;
-						blue = 0.0;
-					}
-					break;
-				case 1:
-					if(ray->vy < 0.0 && d.y < 0.0){
-						red = 0.0;
-						green = 0.0;
-						blue = 0.0;
-					}
-					if(ray->vy >= 0.0 && d.y >= 0.0){
-						red = 0.0;
-						green = 0.0;
-						blue = 0.0;
-					}
-					break;
-				case 2:
-					if(ray->vz < 0.0 && d.z < 0.0){
-						red = 0.0;
-						green = 0.0;
-						blue = 0.0;
-					}
-					if(ray->vz >= 0.0 && d.z >= 0.0){
-						red = 0.0;
-						green = 0.0;
-						blue = 0.0;
-					}
-					break;
-				}
-				*ray = rayCreate(p.x,p.y,p.z,d.x,d.y,d.z);
-				break;
-				}
-			}
-			switch(map[block]){
-			case 9:
-				if(lightmap[block+1] > 255 || lightmap[block+2] > 255 || lightmap[block+3] > 255){
-					continue;
-				}
-				lightmap[block+1] += red;
-				lightmap[block+2] += green;
-				lightmap[block+3] += blue;
-				red   *= 0.95;
-				green *= 0.95;
-				blue  *= 0.95;
-				continue;
-			case 20:
-				if(lightmap[block+1] > 255 || lightmap[block+2] > 255 || lightmap[block+3] > 255){
-					continue;
-				}
-				lightmap[block+1] += red * 0.45;
-				lightmap[block+2] += green * 0.45;
-				lightmap[block+3] += blue * 0.45;
-				continue;
-			case 21:{
-				float r = mapdata[block];
-				float g = mapdata[block+1];
-				float b = mapdata[block+2];
-				float m = fmaxf(r,fmaxf(g,b));
-				r /= m;
-				g /= m;
-				b /= m;
-				red   *= r;
-				green *= g;
-				blue  *= b;
-				break;
-			}
-			case 28:
-				red   *= (float)mapdata[block]*0.005;
-				green *= (float)mapdata[block+1]*0.005;
-				blue  *= (float)mapdata[block+2]*0.005;
-				continue;
-			case 29:
-				red   *= 0.5;
-				green *= 0.05;
-				blue  *= 0.05;
-				break;
-			default:
-				red   *= 1.0;
-				green *= 1.0;
-				blue  *= 1.0;
-				continue;
-			}
-		}
-		if(lightmap[block+1] > 255 || lightmap[block+2] > 255 || lightmap[block+3] > 255){
-			continue;
-		}
-		lightmap[block+1] += red;
-		lightmap[block+2] += green;
-		lightmap[block+3] += blue;
-	}
-}
-
-void updateLight(int pos,float r,float g,float b){
-	RAY ray;
-	for(float i = -0.78; i < 0.78;i+= 0.003){
-		for(float i2 = -0.78; i2 < 0.78;i2+= 0.003){
-			float i3 = (float)rand() /RAND_MAX * 6.28 - 3.14;
-			ray = rayCreate((float)(pos%(properties->lvlSz*4)/4)+0.5,
-		      (float)(pos / (properties->lvlSz*4) * (properties->lvlSz*4) % (properties->lvlSz*properties->lvlSz*4) / (properties->lvlSz*4)) + 0.5,
-			  (float)(pos / (properties->lvlSz*properties->lvlSz*4)) + 0.5,
-			  sinf(i3) * cosf(i+i2),cosf(i3) * cosf(i+i2), sinf(i+i2));
-			updateLightRay(&ray,r,g,b);
-		}
-	}
-}
-
 inline int max3(int val1,int val2,int val3){
 	if(val1 > val2){
 		if(val1 > val3){
@@ -468,27 +307,6 @@ inline int max3(int val1,int val2,int val3){
 	else{
 		return val3;
 	}
-}
-
-void updateLight2(){
-	lightmap = HeapAlloc(GetProcessHeap(),8,sizeof(float) * MAPRAM);	
-	for(int i = 0;i < MAPRAM;i+=4){
-		if(map[i] == 8){
-			map[i] = 0;
-			updateLight(i+1,(float)(mapdata[i])/255.0,(float)(mapdata[i+1])/255.0,(float)(mapdata[i+2])/255.0);
-			map[i] = 8;	
-		}
-	}
-	for(int i = 0;i < MAPRAM;i+=4){
-		map[i+1] = lightmap[i+1];
-		map[i+2] = lightmap[i+2];
-		map[i+3] = lightmap[i+3];
-	}
-	HeapFree(GetProcessHeap(),0,lightmap);
-	glMes[glMesC].id = 3;
-	glMesC++;
-	glMes[glMesC].id = 6;
-	glMesC++;
 }
 
 void updateBlock(int pos,int val){
@@ -529,8 +347,6 @@ void spawnEntity(float x,float y,float z,float vx,float vy,float vz,float sz,int
 	entityC++;
 }
 
-//windows messages kunnen hier worden behandeld
-
 long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	switch(msg){
 	case WM_QUIT:
@@ -556,6 +372,18 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		break;
 	case WM_KEYDOWN:
 		switch(wParam){
+		case VK_ESCAPE:
+			settings ^= 0x10;
+			if(settings & 0x10){	
+				buttonCreate((VEC2){0.05f,-0.35f},1);
+				buttonCreate((VEC2){0.05f,-0.42f},0);
+			}
+			else{
+				buttonDestroy(0);
+				buttonDestroy(1);
+			}
+			SetCursorPos(properties->xres/2,properties->yres/2);
+			break;
 		case VK_LCONTROL:
 			if(!abilities & 0x01){ 
 				player->xvel *= 2.5	;
@@ -814,7 +642,8 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			break;
 		}
 		break;
-	case WM_MOUSEMOVE:{
+	case WM_MOUSEMOVE:
+		if((settings & 0x10) == 0){
 			POINT curp;
 			GetCursorPos(&curp);
 			mousex = (float)(curp.x - 50) / 250;
@@ -834,7 +663,8 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			updateCamera();
 		}
 		break;
-	case WM_MBUTTONDOWN:{
+	case WM_MBUTTONDOWN:
+		if((settings & 0x10) == 0){
 			RAY ray = rayCreate(player->xpos,player->ypos,player->zpos,player->xdir*player->xydir,player->ydir*player->xydir,player->zdir);
 			while(ray.ix>=0&&ray.ix<=properties->lvlSz&&ray.iy>=0&&ray.iy<=properties->lvlSz&&ray.iz>=0&&ray.iz<=properties->lvlSz){
 				int block = crds2map(ray.ix,ray.iy,ray.iz);
@@ -894,12 +724,18 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			break;
 		}
 	case WM_LBUTTONDOWN:{
-			if(settings & 0x01 || settings & 0x04){
+			if((settings & 0x10) == 0){
 				tools();
+			}
+			else{
+				if(buttonId!=-1){
+					buttons[buttonId]();
+				}
 			}
 		break;
 		}
-	case WM_RBUTTONDOWN:{
+	case WM_RBUTTONDOWN:
+			if((settings & 0x10) == 0){
 			RAY ray = rayCreate(player->xpos,player->ypos,player->zpos,player->xdir*player->xydir,player->ydir*player->xydir,player->zdir);
 			while(ray.ix>=0&&ray.ix<=properties->lvlSz&&ray.iy>=0&&ray.iy<=properties->lvlSz&&ray.iz>=0&&ray.iz<=properties->lvlSz){
 				int block = crds2map(ray.ix,ray.iy,ray.iz);
@@ -924,7 +760,6 @@ void physics()
 		player->xdir  = cosf(player->xangle);
 	 	player->ydir  = sinf(player->xangle);
 	 	player->zdir  = sinf(player->yangle);
-
 		if (settings & 0x01)
 		{
 			int amp = 1;
@@ -1215,12 +1050,14 @@ void physics()
 		tick++;
 		
 		Sleep(15);
+		while(settings & 0x10){
+			Sleep(1);
+		}
 	}
 }
 
 void main()
 {
-	//om de Sleep functie accurater te maken
 	timeBeginPeriod(1);
 
 	map        = HeapAlloc(GetProcessHeap(),8,MAPRAM);
@@ -1228,6 +1065,7 @@ void main()
 	player     = HeapAlloc(GetProcessHeap(),8,sizeof(PLAYERDATA));
 	properties = HeapAlloc(GetProcessHeap(),8,sizeof(PROPERTIES));
 	entity     = HeapAlloc(GetProcessHeap(),8,sizeof(ENTITY) * 512);
+	button     = HeapAlloc(GetProcessHeap(),8,sizeof(BUTTON) * 256);
 
 	wndclass.hInstance = GetModuleHandle(0);
 	RegisterClass(&wndclass);

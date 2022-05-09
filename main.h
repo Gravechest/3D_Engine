@@ -5,7 +5,7 @@
 #define MAPSZ 256
 #define MAPRAM MAPSZ*MAPSZ*MAPSZ*4
 
-typedef struct CVEC3{
+typedef struct{
 	unsigned char x;
 	unsigned char y;
 	unsigned char z;
@@ -123,6 +123,14 @@ typedef struct{
 	int iz;
 }RAY;
 
+typedef struct{
+	VEC2 pos;
+	unsigned char id;
+}BUTTON;
+
+extern unsigned char buttonC;
+extern BUTTON *button;
+
 extern int glMesC;
 
 extern unsigned char blockSel;
@@ -136,15 +144,21 @@ extern unsigned char  *map;
 extern unsigned char  *mapdata;
 
 extern HDC dc;
+extern HWND window;
 extern float brightness;
 extern int entityC;
 extern char sprite;
+extern char buttonId;
 extern int tick;
 extern int staticentityC;
 extern int settings;
 extern RGB colorSel;
 extern CVEC3 selarea;
 extern Mat3 cameraMatrix;
+extern void (*buttons[2])();
+
+inline void buttonCreate(VEC2 pos,unsigned char id);
+inline void buttonDestroy(unsigned char id);
 
 void openGL();
 void openCLmain();
@@ -158,6 +172,7 @@ void tools();
 void ittmap();
 void spawnEntity(float x,float y,float z,float vx,float vy,float vz,float sz,int id);
 void updateCamera();
+void updateLight2();
 
 RAY rayCreate(float x,float y,float z,float rx,float ry,float rz);
 
